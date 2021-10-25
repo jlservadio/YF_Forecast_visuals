@@ -1,0 +1,142 @@
+---
+title: "Yellow Fever Forecasts for Brazil"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r, echo = FALSE}
+library(sp)
+library(RColorBrewer)
+library(xtable)
+```
+
+This page shows predictions of future burden, or forecasts, of Yellow Fever across all municipalities of Brazil. 
+
+## Forecast creation
+
+The forecasts created in this document were generated form a statistical model developed through a letter of agreement from the Pan American Health Organization. The model form is a Gamma hurdle model, a two-stage model that produces two forecasted values:
+
+  1. Probability of observing any Yellow Fever cases
+  2. Estimated number of cases per 100,000 population under the condition that any cases are seen. 
+  
+The model uses environmental conditions to produce forecasts for eevery week. The forecasted probability of seeing any Yellow Fever cases uses, as predictors: average temperature two weeks prior, calendar month, previous occurrence of Yellow Fever two weeks prior, and World Wildlife Foundation ecoregions. The forecasted incidence of Yellow Fever, conditioned on seeing any Yellow Fever cases, uses, as predictors: minimum rainfall seven weeks prior, minimum humidity seven weeks prior, previous occurrence of Yellow Fever seven weeks prior, and drainage density. 
+
+The environmental predictors in this model were selected based on forecasting accuracy using weekly Yellow Fever case data collected between December 2016 and March 2018. Model fit was established using data from November 2016 through December 2017, and forecasts of Yellow Fever between January 2018 and March 2018 were compared to observed incidence to assess accuracy of forecasts. 
+
+This model fitting process was also applied to data between January 2000 and November 2016. The results from this model fitting are not used for the forecasts presented here because they represent the time period prior to the recent epidemic. Complete details regarding the model fitting process are currently being prepared for publiction. 
+
+## Yellow Fever forecasts for the week of 2-8 April, 2018
+
+### Probability of observing any Yellow Fever cases
+
+Forecasted probabilities of Yellow Fever occurrence for each municipality were produced using information from the week of 19-25 March, 2018.
+
+```{r, echo = FALSE}
+
+f.dat = read.csv('~/Desktop/Other/UMN/Forecasts.csv')
+
+a = readRDS('~/Desktop/Other/UMN/gadm36_BRA_2_sp.rds')
+z = readRDS('~/Desktop/Other/UMN/gadm36_BRA_1_sp.rds')
+z1 = readRDS('~/Desktop/Other/UMN/gadm36_BRA_0_sp.rds')
+z$no = 0
+z1$no = 0
+
+z = z[-c(4, 24), ]
+
+a$Forecprob = NA
+a$Forecinc = NA
+
+
+for (i in 1:nrow(a)) {
+	
+	if (a$GID_2[i] %in% f.dat$GID_2) {
+		a$Forecprob[i] = f.dat$Prob946[which(f.dat$GID_2 == a$GID_2[i])]
+		a$Forecinc[i] = f.dat$Inc946[which(f.dat$GID_2 == a$GID_2[i])]
+	}
+	
+}
+
+a$Forecprob[which(is.na(a$Forecprob))] = mean(a$Forecprob, na.rm = TRUE)
+a$Forecinc[which(is.na(a$Forecinc))] = median(a$Forecinc, na.rm = TRUE)
+
+
+br.prob = seq(0.00, 0.06, by = 0.01)
+br.prob = c(br.prob, 0.01+max(a$Forecprob, na.rm = TRUE))
+
+a$Prob_quant = cut(a$Forecprob, br.prob)
+
+cols = brewer.pal(length(br.prob)-1, 'OrRd')
+
+print(spplot(a, 'Prob_quant', col.regions = cols, col = NA, 
+	main = 'Forecasted Probability of YF Occurrence', 
+	colorkey = list(labels = list(at = c(1:(length(br.prob)-1)), 
+	labels = c('0.00-0.01', '0.01-0.02', '0.02-0.03', '0.03-0.04', 
+	'0.04-0.05', '0.05-0.06', '> 0.06')))
+	)) # + # spplot(z, 'no', col.regions = NA, add = TRUE)) # + 
+  # 	spplot(z1, 'no', col.regions = NA, add = TRUE))
+
+```
+
+### Estimated incidence of Yellow Fever if any cases are observed
+
+Forecasted incidences of Yellow Fever fore each municipality were produced using information from the week of 12-18 February, 2018. The forecasted incidences were estimated separately form the forecasted probabilities of occurrence, so forecasted incidence values are produced even when the probability of occurrence is very low. 
+
+```{r, echo = FALSE}
+br.inc = seq(0, 20, by = 5)
+br.inc = c(br.inc, 1+max(a$Forecinc, na.rm = TRUE))
+
+a$Inc_quant = cut(a$Forecinc, br.inc)
+
+cols = brewer.pal(length(br.inc)-1, 'OrRd')
+
+print(spplot(a, 'Inc_quant', col.regions = cols, col = NA, 
+	main = 'Forecasted Incidence if YF Occurs', 
+	colorkey = list(labels = list(at = c(1:(length(br.prob)-1)), 
+	labels = c('0-5', '5-10', '10-15', '15-20    ', '> 20')))
+	)) # + spplot(z, 'no', col.regions = NA, add = TRUE) + 
+	# spplot(z1, 'no', col.regions = NA, add = TRUE))
+```
+
+## Interpretation of results
+
+The first map shows a forecasted probability that any Yellow Fever cases will occur. If Yellow Fever cases were to occur, the second map shows the forecasted number of cases per 100,000 population. 
+
+### The following municipalities have the highest predicted probability of Yellow Fever occurrence:
+
+```{r, echo = FALSE}
+cutoff = sort(a$Forecprob, decreasing = TRUE)[20]
+index = which(a$Forecprob >= cutoff)
+tab = cbind(paste(a$NAME_2[index], ', ', a$NAME_1[index], sep = ''), 
+    round(a$Forecprob[index], 2))
+colnames(tab) = c('Municipality', 'Probability')
+# print(xtable(tab), type = 'html') 
+# print(tab)
+
+tab = data.frame('Municipality' = paste(a$NAME_2, ', ', a$NAME_1, sep = ''), 
+    'Probability' = round(a$Forecprob, 2))
+tab = tab[order(tab$Probability, decreasing = TRUE), ]
+rownames(tab) = NULL
+print(tab[c(1:20), ])
+
+```
+
+### If any Yellow Fever cases occur, the following municipalities have the highest forecasted incidence:
+
+```{r, echo = FALSE}
+cutoff = sort(a$Forecinc, decreasing = TRUE)[20]
+index = which(a$Forecinc >= cutoff)
+tab = cbind(paste(a$NAME_2[index], ', ', a$NAME_1[index], sep = ''), 
+    round(a$Forecinc[index], 2))
+colnames(tab) = c('Municipality', 'Incidence')
+print(xtable(tab), type = 'html')
+
+tab = data.frame('Municipality' = paste(a$NAME_2, ', ', a$NAME_1, sep = ''), 
+    'Incidence' = round(a$Forecinc, 2))
+tab = tab[order(tab$Incidence, decreasing = TRUE), ]
+rownames(tab) = NULL
+print(tab[c(1:20), ])
+```
+
+
+
