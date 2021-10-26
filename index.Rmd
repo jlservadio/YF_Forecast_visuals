@@ -5,6 +5,7 @@ output:
     keep_md: true
 ---
 
+
 ```{r, echo = FALSE}
 library(sp)
 library(RColorBrewer)
@@ -129,7 +130,7 @@ index = which(a$Forecinc >= cutoff)
 tab = cbind(paste(a$NAME_2[index], ', ', a$NAME_1[index], sep = ''), 
     round(a$Forecinc[index], 2))
 colnames(tab) = c('Municipality', 'Incidence')
-print(xtable(tab), type = 'html')
+# print(xtable(tab), type = 'html')
 
 tab = data.frame('Municipality' = paste(a$NAME_2, ', ', a$NAME_1, sep = ''), 
     'Incidence' = round(a$Forecinc, 2))
