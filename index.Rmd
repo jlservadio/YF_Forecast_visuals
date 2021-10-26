@@ -105,7 +105,7 @@ The first map shows a forecasted probability that any Yellow Fever cases will oc
 
 ### The following municipalities have the highest predicted probability of Yellow Fever occurrence:
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, results = 'asis'}
 cutoff = sort(a$Forecprob, decreasing = TRUE)[20]
 index = which(a$Forecprob >= cutoff)
 tab = cbind(paste(a$NAME_2[index], ', ', a$NAME_1[index], sep = ''), 
@@ -118,13 +118,13 @@ tab = data.frame('Municipality' = paste(a$NAME_2, ', ', a$NAME_1, sep = ''),
     'Probability' = round(a$Forecprob, 2))
 tab = tab[order(tab$Probability, decreasing = TRUE), ]
 rownames(tab) = NULL
-print(tab[c(1:20), ])
+print(xtable(tab[c(1:20), ]), type = 'html')
 
 ```
 
 ### If any Yellow Fever cases occur, the following municipalities have the highest forecasted incidence:
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, results = 'asis'}
 cutoff = sort(a$Forecinc, decreasing = TRUE)[20]
 index = which(a$Forecinc >= cutoff)
 tab = cbind(paste(a$NAME_2[index], ', ', a$NAME_1[index], sep = ''), 
@@ -136,7 +136,7 @@ tab = data.frame('Municipality' = paste(a$NAME_2, ', ', a$NAME_1, sep = ''),
     'Incidence' = round(a$Forecinc, 2))
 tab = tab[order(tab$Incidence, decreasing = TRUE), ]
 rownames(tab) = NULL
-print(tab[c(1:20), ])
+print(xtable(tab[c(1:20), ]), type = 'html')
 ```
 
 
